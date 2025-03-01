@@ -233,7 +233,6 @@ func parseExpression(expr string, exprID string) ([]*Task, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("Parsed RPN: %+v\n", rpn)
 
 	bracketLevels := getBracketLevels(tokens, rpn)
 
@@ -286,7 +285,6 @@ func parseExpression(expr string, exprID string) ([]*Task, error) {
 		}
 	}
 
-	fmt.Printf("Parsed Tasks: %+v\n", tasks)
 	return tasks, nil
 }
 

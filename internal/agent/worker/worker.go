@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -44,8 +45,6 @@ func StartWorker() {
 			continue
 		}
 
-		fmt.Printf("Fetched task: %+v\n", task)
-
 		result, err := executeTask(task)
 		if err != nil {
 			fmt.Printf("Error executing task %s: %v\n", task.ID, err)
@@ -62,13 +61,20 @@ func StartWorker() {
 		if task.Done != nil {
 			close(task.Done)
 		}
-		fmt.Printf("Done task: %+v\nRes=%f\n", task, result)
+
+		log.Printf("Task finished successfully: %+v. Res = %f\n", task, result)
+
 		globalMutex.Unlock()
 	}
 }
 
 func fetchTask() (*Task, error) {
-	resp, err := http.Get("http://localhost:8080/internal/task")
+	orchestratorURL := os.Getenv("ORCHESTRATOR_URL")
+	if orchestratorURL == "" {
+		orchestratorURL = "http://localhost:8080"
+	}
+
+	resp, err := http.Get(orchestratorURL + "/internal/task")
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch task: %w", err)
 	}
@@ -93,9 +99,8 @@ func fetchTask() (*Task, error) {
 }
 
 func executeTask(task *Task) (float64, error) {
-	log.Printf("Executing task %s\n", task.ID)
-	time.Sleep(time.Duration(task.OperationTime))
-	log.Println("Executed\n")
+	time.Sleep(task.OperationTime)
+
 	result, err := calculator.Resolve(task.Arg1, task.Arg2, task.Operation)
 	if err != nil {
 		return 0, fmt.Errorf("failed to resolve task: %w", err)
@@ -118,7 +123,12 @@ func sendResult(taskID string, result float64) error {
 		return fmt.Errorf("failed to marshal result: %w", err)
 	}
 
-	resp, err := http.Post("http://localhost:8080/internal/task", "application/json", strings.NewReader(string(jsonData)))
+	orchestratorURL := os.Getenv("ORCHESTRATOR_URL")
+	if orchestratorURL == "" {
+		orchestratorURL = "http://localhost:8080"
+	}
+
+	resp, err := http.Post(orchestratorURL+"/internal/task", "application/json", strings.NewReader(string(jsonData)))
 	if err != nil {
 		return fmt.Errorf("failed to send result: %w", err)
 	}

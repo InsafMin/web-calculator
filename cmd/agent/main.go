@@ -5,10 +5,10 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 )
 
 func main() {
-	// Получаем количество горутин (вычислителей) из переменной окружения
 	computingPowerStr := os.Getenv("COMPUTING_POWER")
 	if computingPowerStr == "" {
 		computingPowerStr = "4" // Значение по умолчанию
@@ -19,12 +19,13 @@ func main() {
 		log.Fatalf("Invalid COMPUTING_POWER value: %v", err)
 	}
 
-	// Запускаем горутины для обработки задач
+	log.Println("Waiting for orchestrator to start...")
+	time.Sleep(5 * time.Second)
+
 	for i := 0; i < computingPower; i++ {
 		go worker.StartWorker()
 	}
 
-	// Бесконечный цикл для поддержания работы агента
 	log.Println("Agent started with", computingPower, "workers")
 	select {}
 }
